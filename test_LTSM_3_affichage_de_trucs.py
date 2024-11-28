@@ -4,9 +4,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from sklearn.preprocessing import MinMaxScaler
-
-import pandas as pd
-import numpy as np
+import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 def generate_historical_data(num_days=30):
@@ -72,7 +70,7 @@ data = generate_historical_data(num_days=29)
 print(data)
 
 # Préparer les données pour un modèle LSTM
-def prepare_lstm_data(data, lookback=7):
+def prepare_lstm_data(data, lookback= 10):
     pivot = data.pivot(index="day", columns="time", values="wait_time")
     values = pivot.values
     scaler = MinMaxScaler()
@@ -85,7 +83,7 @@ def prepare_lstm_data(data, lookback=7):
     return np.array(X), np.array(y), scaler
 
 # Préparer les données pour LSTM
-lookback = 7  # Utiliser les données des 7 derniers jours
+lookback = 10  # Utiliser les données des X derniers jours
 X, y, scaler = prepare_lstm_data(data, lookback=lookback)
 
 # Diviser en ensemble d'entraînement et de test
@@ -106,7 +104,18 @@ model.compile(optimizer='adam', loss='mse')
 model.summary()
 
 # Entraîner le modèle
-history = model.fit(X_train, y_train, epochs=100, batch_size=16, validation_data=(X_test, y_test))
+history = model.fit(X_train, y_train, epochs=50, batch_size=16, validation_data=(X_test, y_test))
+
+#Plot graphe loss en fonction des epochs
+plt.figure(figsize=(10, 6))
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title("Courbes de Perte (Loss) pendant l'Entraînement")
+plt.xlabel("Épochs")
+plt.ylabel("Loss (MSE)")
+plt.legend()
+plt.grid(True)
+plt.show()
 
 # Prédire pour un nouveau jour
 y_pred = model.predict(X_test)
