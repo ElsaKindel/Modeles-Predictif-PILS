@@ -11,31 +11,55 @@ from datetime import datetime, timedelta
 
 def generate_historical_data(num_days=30):
     """
-    Fonction pour générer des données historiques simulées pour les temps d'attente.
+    Génère des données historiques réalistes pour les temps d'attente,
+    en excluant les week-ends (samedi et dimanche).
     
-    :param num_days: Le nombre de jours pour lesquels générer les données.
+    :param num_days: Nombre de jours ouvrés pour lesquels générer les données.
     :return: Un DataFrame contenant les données simulées.
     """
-    # Liste des heures de la journée entre 11h30 et 13h30 (par exemple, tous les 10 minutes)
+    # Liste des heures de la journée (toutes les 10 minutes entre 11h30 et 13h30)
     time_intervals = pd.date_range("11:30", "13:30", freq="10min").strftime('%H:%M').tolist()
     
-    # Initialisation de la liste pour stocker les données
-    data = []
+    # Moyennes et écarts-types ajustés aux heures (comportement horaire typique)
+    hourly_means = {
+        "11:30": 1, "11:40": 3, "11:50": 4,
+        "12:00": 10, "12:10": 15, "12:20": 20,
+        "12:30": 20, "12:40": 16, "12:50": 14,
+        "13:00": 10, "13:10": 5, "13:20": 3, "13:30": 1
+    }
+    hourly_std_devs = {
+        "11:30": 1, "11:40": 2, "11:50": 5,
+        "12:00": 10, "12:10": 10, "12:20": 5,
+        "12:30": 4, "12:40": 4, "12:50": 3,
+        "13:00": 3, "13:10": 2, "13:20": 2, "13:30": 1
+    }
     
-    # Générer des données pour chaque jour
-    for day_offset in range(num_days):
-        # Calculer la date du jour actuel
-        current_day = (datetime.now() - timedelta(days=day_offset)).strftime('%Y-%m-%d')
+    # Générer les données pour chaque jour
+    data = []
+    days_generated = 0  # Compte les jours ouvrés générés
+    current_date = datetime.now()
+    
+    while days_generated < num_days:
+        # Vérifier si le jour actuel est un week-end
+        if current_date.weekday() >= 5:  # 5 = Samedi, 6 = Dimanche
+            current_date -= timedelta(days=1)
+            continue
         
-        # Générer des temps d'attente aléatoires (par exemple entre 0 et 20 minutes)
-        # Vous pouvez modifier cette partie pour ajouter un comportement plus réaliste
+        # Ajouter les données horaires pour ce jour
         for time in time_intervals:
-            # Simuler un temps d'attente aléatoire (par exemple, entre 0 et 20 minutes)
-            wait_time = np.random.uniform(0, 20)
-            #wait_time = np.random.normal(0, 20)
-
-            # Ajouter la ligne de données au tableau
-            data.append([current_day, time, wait_time])
+            mean = hourly_means[time]
+            std_dev = hourly_std_devs[time]
+            
+            # Générer un temps d'attente basé sur une distribution normale
+            wait_time = np.random.normal(loc=mean, scale=std_dev)
+            wait_time = max(0, wait_time)  # Temps d'attente non négatif
+            
+            # Ajouter la ligne de données
+            data.append([current_date.strftime('%Y-%m-%d'), time, wait_time])
+        
+        # Passer au jour précédent
+        current_date -= timedelta(days=1)
+        days_generated += 1
     
     # Créer un DataFrame à partir des données
     df = pd.DataFrame(data, columns=["day", "time", "wait_time"])
@@ -91,5 +115,3 @@ y_pred_rescaled = scaler.inverse_transform(y_pred)  # Revenir aux valeurs origin
 # Évaluer les performances
 mae = np.mean(np.abs(scaler.inverse_transform(y_test) - y_pred_rescaled))
 print(f"Mean Absolute Error: {mae:.2f}")
-
-
