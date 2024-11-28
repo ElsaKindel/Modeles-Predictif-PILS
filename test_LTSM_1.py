@@ -44,7 +44,7 @@ def generate_historical_data(num_days=30):
 
 # Simuler des données historiques
 data = generate_historical_data(num_days=30)
-print(data.head())
+print(data)
 
 # Préparer les données pour un modèle LSTM
 def prepare_lstm_data(data, lookback=3):
