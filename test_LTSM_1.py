@@ -96,10 +96,10 @@ def generate_historical_data(num_days=30):
 
 # Simuler des données historiques
 data = generate_historical_data(num_days=30)
-print(data.head())
+print(data)
 
 # Préparer les données pour un modèle LSTM
-def prepare_lstm_data(data, lookback=3):
+def prepare_lstm_data(data, lookback=7):
     pivot = data.pivot(index="day", columns="time", values="wait_time")
     values = pivot.values
     scaler = MinMaxScaler()
@@ -112,7 +112,7 @@ def prepare_lstm_data(data, lookback=3):
     return np.array(X), np.array(y), scaler
 
 # Préparer les données pour LSTM
-lookback = 3  # Utiliser les données des 3 derniers jours
+lookback = 7  # Utiliser les données des 7 derniers jours
 X, y, scaler = prepare_lstm_data(data, lookback=lookback)
 
 # Diviser en ensemble d'entraînement et de test
@@ -122,10 +122,10 @@ y_train, y_test = y[:split], y[split:]
 
 # Construire le modèle LSTM
 model = Sequential([
-    LSTM(50, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])),
-    Dropout(0.2),
-    LSTM(50),
-    Dropout(0.2),
+    LSTM(128, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])),
+    Dropout(0.3),
+    LSTM(64),
+    Dropout(0.3),
     Dense(y_train.shape[1])
 ])
 
@@ -133,7 +133,7 @@ model.compile(optimizer='adam', loss='mse')
 model.summary()
 
 # Entraîner le modèle
-history = model.fit(X_train, y_train, epochs=50, batch_size=16, validation_data=(X_test, y_test))
+history = model.fit(X_train, y_train, epochs=100, batch_size=16, validation_data=(X_test, y_test))
 
 # Prédire pour un nouveau jour
 y_pred = model.predict(X_test)
