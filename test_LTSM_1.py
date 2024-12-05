@@ -81,7 +81,7 @@ def generate_historical_data(num_days=30):
         # Vous pouvez modifier cette partie pour ajouter un comportement plus réaliste
         #for time in time_intervals:
             # Simuler un temps d'attente aléatoire (par exemple, entre 0 et 20 minutes)
-        wait_time = generate_wait_time(show_gaussian=False)#np.random.uniform(0, 20) #generate_wait_time()
+        wait_time = generate_wait_time(show_gaussian=True)#np.random.uniform(0, 20) #generate_wait_time()
         # Ajouter la ligne de données au tableau
         current_data = {"day" : np.full(len(time_intervals), current_day), "time" : time_intervals, "wait_time" : wait_time}
         current_data_df = pd.DataFrame(current_data, columns=["day", "time","wait_time"])
@@ -133,7 +133,17 @@ model.compile(optimizer='adam', loss='mse')
 model.summary()
 
 # Entraîner le modèle
-history = model.fit(X_train, y_train, epochs=100, batch_size=16, validation_data=(X_test, y_test))
+history = model.fit(X_train, y_train, epochs=60, batch_size=16, validation_data=(X_test, y_test))
+#Plot graphe loss en fonction des epochs
+plt.figure(figsize=(10, 6))
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title("Courbes de Perte (Loss) pendant l'Entraînement")
+plt.xlabel("Épochs")
+plt.ylabel("Loss (MSE)")
+plt.legend()
+plt.grid(True)
+plt.show()
 
 # Prédire pour un nouveau jour
 y_pred = model.predict(X_test)
