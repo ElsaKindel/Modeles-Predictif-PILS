@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.layers import LSTM, Dense, Dropout, Bidirectional
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
@@ -66,11 +66,11 @@ def generate_historical_data(num_days=30):
 
 
 # Simuler des données historiques
-data = generate_historical_data(num_days=29)
+data = generate_historical_data(num_days=30)
 print(data)
 
 # Préparer les données pour un modèle LSTM
-def prepare_lstm_data(data, lookback= 10):
+def prepare_lstm_data(data, lookback= 17):
     pivot = data.pivot(index="day", columns="time", values="wait_time")
     values = pivot.values
     scaler = MinMaxScaler()
@@ -83,7 +83,7 @@ def prepare_lstm_data(data, lookback= 10):
     return np.array(X), np.array(y), scaler
 
 # Préparer les données pour LSTM
-lookback = 10  # Utiliser les données des X derniers jours
+lookback = 17  # Utiliser les données des X derniers jours
 X, y, scaler = prepare_lstm_data(data, lookback=lookback)
 
 # Diviser en ensemble d'entraînement et de test
@@ -93,6 +93,7 @@ y_train, y_test = y[:split], y[split:]
 
 # Construire le modèle LSTM
 model = Sequential([
+    #Bidirectional(LSTM(128, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2]))),
     LSTM(128, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])),
     Dropout(0.3),
     LSTM(64),
@@ -120,6 +121,7 @@ plt.show()
 # Prédire pour un nouveau jour
 y_pred = model.predict(X_test)
 y_pred_rescaled = scaler.inverse_transform(y_pred)  # Revenir aux valeurs originales
+print("Prédiction du jour", y_pred_rescaled)
 
 # Évaluer les performances
 mae = np.mean(np.abs(scaler.inverse_transform(y_test) - y_pred_rescaled))
