@@ -6,6 +6,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+import json
 
 def generate_wait_time(mu = 40, show_gaussian = False):
     """
@@ -137,19 +138,33 @@ model.summary()
 # Entraîner le modèle
 history = model.fit(X_train, y_train, epochs=60, batch_size=16, validation_data=(X_test, y_test))
 #Plot graphe loss en fonction des epochs
-plt.figure(figsize=(10, 6))
-plt.plot(history.history['loss'], label='Training Loss')
-plt.plot(history.history['val_loss'], label='Validation Loss')
-plt.title("Courbes de Perte (Loss) pendant l'Entraînement")
-plt.xlabel("Épochs")
-plt.ylabel("Loss (MSE)")
-plt.legend()
-plt.grid(True)
-plt.show()
+graphe = False
+if graphe==True:
+    plt.figure(figsize=(10, 6))
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.title("Courbes de Perte (Loss) pendant l'Entraînement")
+    plt.xlabel("Épochs")
+    plt.ylabel("Loss (MSE)")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
-# Prédire pour un nouveau jour
-y_pred = model.predict(X_test)
+# Prédiction pour un seul jour
+X_test_one_day = X[22] #jour random pris dans l'historique généré
+# X[22] est de forme 7*24 puisqu'il contient les données des 7 jours précédents (lookback = 7) 
+# et qu'il y a 24 échantillons pour chaque service
+X_test_one_day = np.expand_dims(X_test_one_day, axis=0) #ajoute la batch size, obligatoire en LSTM
+y_pred = model.predict(X_test_one_day)
 y_pred_rescaled = scaler.inverse_transform(y_pred)  # Revenir aux valeurs originales
+print("Prédictions :", y_pred_rescaled)
+
+
+# Sauvegarder dans un fichier
+"""with open("Fichiers_JSON_predictions/predictions.json", "w") as f:
+    json.dump(y_pred_rescaled, f)
+
+print("Fichier predictions.json créé.")"""
 
 # Évaluer les performances
 mae = np.mean(np.abs(scaler.inverse_transform(y_test) - y_pred_rescaled))
