@@ -22,7 +22,7 @@ predictions = { # False prediction, for testing only
     "token" : ACCESS_TOKEN,
 }
 
-# Filling if the headers
+# Filling the headers
 headers = {
     "Content-Type": "application/json",
 }
