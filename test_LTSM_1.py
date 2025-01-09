@@ -8,7 +8,9 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import json
 
-def generate_wait_time(mu = 40, show_gaussian = False):
+MIN_PER_SAMPLE = 10 #fréquence des échantillons en minute (1 échantillon = x minutes)
+
+def generate_wait_time(x_hours, mu = 40, show_gaussian = False):
     """
     mu : (int, default 40) Heure moyenne du pic (40e minute, soit 12h10)
     show_gaussian : (boolean, default False) Permet de visualiser la répartition du temps d'attente
@@ -17,17 +19,16 @@ def generate_wait_time(mu = 40, show_gaussian = False):
     """
     # Paramètres de la simulation
     time_frame = 120 # en minutes, durée du service 
-    min_per_sample = 5 #fréquence des échantillons en minute (1 échantillon = 5 minutes)
-    n_intervals = int(time_frame/min_per_sample)  # 12 points pour une plage de 2 heures (chaque point = 10 minutes)
-    ech_mu = mu/min_per_sample #pic rammené au nombre d'échantillons
+    n_intervals = int(time_frame/MIN_PER_SAMPLE)  # 12 points pour une plage de 2 heures (chaque point = 10 minutes)
+    ech_mu = mu/MIN_PER_SAMPLE #pic rammené au nombre d'échantillons
     sigma = 10  # Écart-type pour modéliser la montée et la descente progressive
     base_attente = 1  # Attente minimale (en minutes)
     fluctuation_scale = 3  # Amplitude des fluctuations (bruit rouge)
     amplitude_attente = 20 # Durée maximale d'attente
 
     # Étape 1 : Générer une tendance globale avec une gaussienne
-    x = np.arange(0, time_frame-1, min_per_sample)  # Minutes de la plage horaire (start, stop, step)
-    x_hours = ["11:30", "11:40", "11:50", "12", "12:10","12:20","12:30", "12:40", "12:50",  "13",  "13:10",  "13:20"]
+    x = np.arange(0, time_frame, MIN_PER_SAMPLE)  # Minutes de la plage horaire (start, stop, step)
+    #x_hours = ["11:30", "11:40", "11:50", "12", "12:10","12:20","12:30", "12:40", "12:50",  "13",  "13:10",  "13:20"]
     trend = base_attente + amplitude_attente * np.exp(-(x - mu) ** 2 / (2 * sigma ** 2))
 
     # Étape 2 : Générer des fluctuations cohérentes avec un bruit rouge
@@ -61,16 +62,16 @@ def generate_wait_time(mu = 40, show_gaussian = False):
 
     return wait_times
 
-def generate_historical_data(num_days=30):
+def generate_historical_data(freq, num_days=30):
     """
     Fonction pour générer des données historiques simulées pour les temps d'attente.
     
     :param num_days: Le nombre de jours pour lesquels générer les données.
     :return: Un DataFrame contenant les données simulées.
     """
-
+    freq = str(freq)+"min"
     # Liste des heures de la journée entre 11h30 et 13h20 (par exemple, tous les 10 minutes)
-    time_intervals = pd.date_range("11:30", "13:25", freq="5min").strftime('%H:%M').tolist()
+    time_intervals = pd.date_range("11:30", "13:20", freq=freq).strftime('%H:%M').tolist()
     
     # Initialisation de la liste pour stocker les données
     data = pd.DataFrame()
@@ -84,7 +85,7 @@ def generate_historical_data(num_days=30):
         # Vous pouvez modifier cette partie pour ajouter un comportement plus réaliste
         #for time in time_intervals:
             # Simuler un temps d'attente aléatoire (par exemple, entre 0 et 20 minutes)
-        wait_time = generate_wait_time(show_gaussian=False)#np.random.uniform(0, 20) #generate_wait_time()
+        wait_time = generate_wait_time(x_hours = time_intervals, show_gaussian=False)#np.random.uniform(0, 20) #generate_wait_time()
         # Ajouter la ligne de données au tableau
         current_data = {"day" : np.full(len(time_intervals), current_day), "time" : time_intervals, "wait_time" : wait_time}
         current_data_df = pd.DataFrame(current_data, columns=["day", "time","wait_time"])
@@ -98,7 +99,7 @@ def generate_historical_data(num_days=30):
 
 
 # Simuler des données historiques
-data = generate_historical_data(num_days=30)
+data = generate_historical_data(freq = MIN_PER_SAMPLE, num_days=30)
 print(data)
 
 # Préparer les données pour un modèle LSTM
@@ -161,10 +162,11 @@ print("Prédictions :", y_pred_rescaled)
 
 
 # Sauvegarder dans un fichier
-"""with open("Fichiers_JSON_predictions/predictions.json", "w") as f:
-    json.dump(y_pred_rescaled, f)
+with open("Fichiers_JSON_predictions/predictions.json", "w") as f:
+    print("Prédictions à enregistrer :", y_pred_rescaled.squeeze().tolist())
+    json.dump(y_pred_rescaled.squeeze().tolist(), f)
 
-print("Fichier predictions.json créé.")"""
+print("Fichier predictions.json créé.")
 
 # Évaluer les performances
 mae = np.mean(np.abs(scaler.inverse_transform(y_test) - y_pred_rescaled))

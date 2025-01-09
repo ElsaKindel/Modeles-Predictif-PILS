@@ -9,12 +9,16 @@ API_URL = "https://script.google.com/macros/s/AKfycbzSSfJYbMKFx35IHz_aI7nBTyX5mb
 with open("jeton.txt", "r") as file:
     ACCESS_TOKEN = file.read().strip()
 
+# Charger les prédictions depuis le fichier
+with open("Fichiers_JSON_predictions/predictions.json", "r") as f:
+    predictions = json.load(f)
+
 # Data to send (test)
 predictions = { # False prediction, for testing only
     "action": "updatePredictedTime",
-    "predictionArray": [2,3,6,11,13,18,26,22,27,24,11,9,6], 
+    "predictionArray": predictions,
     "restaurant": "ri lunch",
-    "date":"2025-01-14T12:00:00",
+    "date":"2025-01-15T12:00:00",
     "token" : ACCESS_TOKEN,
 }
 
