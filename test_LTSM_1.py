@@ -102,22 +102,28 @@ def generate_historical_data(freq, num_days=30):
 data = generate_historical_data(freq = MIN_PER_SAMPLE, num_days=30)
 print(data)
 
-# Préparer les données pour un modèle LSTM
-def prepare_lstm_data(data, lookback=7):
+def prepare_lstm_data_weekly_pattern(data, lookback_weeks=4):
     pivot = data.pivot(index="day", columns="time", values="wait_time")
     values = pivot.values
     scaler = MinMaxScaler()
     scaled_values = scaler.fit_transform(values)
     
     X, y = [], []
-    for i in range(lookback, len(scaled_values)):
-        X.append(scaled_values[i - lookback:i, :])
+    for i in range(lookback_weeks, len(scaled_values)):
+        X.append(scaled_values[i - lookback_weeks:i, :])
         y.append(scaled_values[i, :])
+    
+    # Vérification des formes avant de retourner
+    print(f"Longueur de X : {len(X)}")
+    print(f"Longueur de y : {len(y)}")
+    if len(X) == 0 or len(y) == 0:
+        raise ValueError("X ou y est vide. Vérifiez les paramètres de lookback_weeks ou les données d'entrée.")
+
     return np.array(X), np.array(y), scaler
 
-# Préparer les données pour LSTM
-lookback = 7  # Utiliser les données des 7 derniers jours
-X, y, scaler = prepare_lstm_data(data, lookback=lookback)
+# Préparer les données
+X, y, scaler = prepare_lstm_data_weekly_pattern(data, lookback_weeks=4)
+
 
 # Diviser en ensemble d'entraînement et de test
 split = int(0.8 * len(X))
