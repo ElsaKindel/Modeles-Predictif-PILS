@@ -19,7 +19,7 @@ const String token = "ZXNwOmM2OTc5YmI5MDAyODNkNTk=";  // Token for your API
 
 // NTP client to get current time
 WiFiUDP udp;
-NTPClient timeClient(udp, "pool.ntp.org", 3, 60000); // 3 seconds offset, update every minute
+NTPClient timeClient(udp, "pool.ntp.org", 3600, 60000); // UTC+1 for France
 
 int estimateTime(float dist) {
   if (dist >= 13.0) return 20;
