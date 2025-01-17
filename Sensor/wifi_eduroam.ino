@@ -138,6 +138,6 @@ jsonData += "\"token\":\"" + token + "\"}";
     }
 
     http.end();
-    delay(3000);
-    /*go_to_sleep();
+    delay(30000);
+    /*go_to_sleep();*/
 }
