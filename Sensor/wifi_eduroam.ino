@@ -4,9 +4,9 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <NTPClient.h>
-#define EAP_IDENTITY "username"           //if connecting from another corporation, use identity@organization.domain in Eduroam
-#define EAP_USERNAME "username"           //oftentimes just a repeat of the identity
-#define EAP_PASSWORD "mdp"        //your Eduroam password
+#define EAP_IDENTITY "login"           //if connecting from another corporation, use identity@organization.domain in Eduroam
+#define EAP_USERNAME "login"           //oftentimes just a repeat of the identity
+#define EAP_PASSWORD "password"        //your Eduroam password
 
 
 Adafruit_MLX90640 mlx;
@@ -14,12 +14,12 @@ float frame[32 * 24]; // 32x24 thermal image
 
 const char *ssid = "eduroam";          // Eduroam SSID
 
-const char* scriptURL = "https://script.google.com/macros/s/AKfycbx_rEQBeaj3SWysdiY_LO3lw1FOCwyyss-EH5JPZplBp2cHJdiC3CV0CgKOtU5onogh/exec"; // Replace with your Google Apps Script URL
+const char* scriptURL = "https://script.google.com/macros/s/AKfycbzSSfJYbMKFx35IHz_aI7nBTyX5mbdvoKxHIydY9eg1M1p21xBbUfRgIzKfMvBkAf0/exec"; // Replace with your Google Apps Script URL
 const String token = "ZXNwOmM2OTc5YmI5MDAyODNkNTk=";  // Token for your API
 
 // NTP client to get current time
 WiFiUDP udp;
-NTPClient timeClient(udp, "pool.ntp.org", 3600, 60000); // UTC+1 for France
+NTPClient timeClient(udp, "pool.ntp.org", 3600, 60000); // 3 seconds offset, update every minute
 
 int estimateTime(float dist) {
   if (dist >= 13.0) return 20;
@@ -28,13 +28,13 @@ int estimateTime(float dist) {
   if (dist >= 2.7) return round((dist - 2.7) * (4.0 - 0.0) / (7.1 - 2.7));
   return 0;
 }
-
+/*
 void go_to_sleep() { 
     Serial.println("ESP32 entering deep sleep for 30 seconds...");
     esp_sleep_enable_timer_wakeup(30 * 1000000); // 30 seconds in microseconds
     esp_deep_sleep_start();
 }
-
+*/
 
 void setup() {
   Serial.begin(115200);
@@ -83,7 +83,7 @@ void loop() {
       for (int w = 0; w < 32; w++) {
         float temperature = frame[h * 32 + w];
         dist = 0.0;
-        if (w > 0 && w < 5 && h > 10 && h < 15 && temperature < 30) dist = 0.0;
+        if (w > 0 && w < 5 && h > 10 && h < 15 && temperature < 32) dist = 0.0;
         else if (h > 10 && h < 15 && temperature > 30) dist = (w + 1) * 0.4;
         if (dist > max_distance) max_distance = dist;
       }
@@ -97,7 +97,7 @@ void loop() {
   float avgDistance = totalDistance / numReadings;
 
   // Estimate the time based on the average distance
-  float timeEst = estimateTime(avgDistance);
+  int timeEst = estimateTime(avgDistance);
 
   // Get current time (hour)
   timeClient.update();
@@ -113,10 +113,11 @@ void loop() {
   Serial.println();
 
   String jsonData = "{\"action\":\"updateWaitingTime\",";
-  jsonData += "\"waitingTime\":\"" + String(timeEst, 1) + "\",";  // Make sure waitingTime is a string
-  jsonData += "\"restaurant\":\"Olivier\",";
-  jsonData += "\"hour\":\"" + hour + "\",";  // Make sure hour is a string
-  jsonData += "\"token\":\"" + token + "\"}";
+jsonData += "\"waitingTime\":" + String(timeEst) + ",";  // 
+jsonData += "\"restaurant\":\"olivier\",";
+jsonData += "\"hour\":\"" + hour + "\",";  // 
+jsonData += "\"token\":\"" + token + "\"}";
+
 
     // Send data via HTTP
     HTTPClient http;
@@ -137,6 +138,6 @@ void loop() {
     }
 
     http.end();
-    delay(500);
-    go_to_sleep();
+    delay(3000);
+    /*go_to_sleep();
 }
