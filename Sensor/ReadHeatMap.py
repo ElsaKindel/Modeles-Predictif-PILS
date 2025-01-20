@@ -42,6 +42,41 @@ while len(data) < NUM_COLUMNS * NUM_ROWS:
 # Convert the data into a numpy array and reshape it into a 32x24 matrix
 data_matrix = np.array(data[:NUM_COLUMNS * NUM_ROWS]).reshape(NUM_ROWS, NUM_COLUMNS)
 
+# Function to estimate time based on distance
+def estimate_time(dist):
+    if dist >= 13.0:
+        return 20.0
+    elif dist >= 10.4:
+        return 9.0 + (dist - 10.4) * (20.0 - 9.0) / (13.0 - 10.4)
+    elif dist >= 7.1:
+        return 4.0 + (dist - 7.1) * (9.0 - 4.0) / (10.4 - 7.1)
+    elif dist >= 2.7:
+        return (dist - 2.7) * (4.0 - 0.0) / (7.1 - 2.7)
+    else:
+        return 0.0
+
+# Function to calculate distance based on specific conditions
+def calculate_distance(w, h, temp):
+    if 0 < w < 5 and 10 < h < 15 and temp < 30:
+        return 0.0
+    elif 10 < h < 15 and temp > 30:
+        return (w + 1) * 0.4
+    return 0.0
+
+# Calculate the maximum distance and corresponding estimated time
+max_distance = 0.0
+
+for h in range(data_matrix.shape[0]):
+    for w in range(data_matrix.shape[1]):
+        temp = data_matrix[h, w]
+        dist = calculate_distance(w, h, temp)
+        if dist > max_distance:
+            max_distance = dist
+
+max_time = estimate_time(max_distance)
+print(f"Maximum Distance: {max_distance:.2f}")
+print(f"Estimated Time for Max Distance: {max_time:.2f} minutes")
+
 # Create the 'data' folder if it doesn't exist
 output_folder = 'data'
 if not os.path.exists(output_folder):
