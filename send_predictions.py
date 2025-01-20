@@ -9,37 +9,40 @@ API_URL = "https://script.google.com/macros/s/AKfycbzSSfJYbMKFx35IHz_aI7nBTyX5mb
 with open("jeton.txt", "r") as file:
     ACCESS_TOKEN = file.read().strip()
 
-# Charger les prédictions depuis le fichier
-with open("Fichiers_JSON_predictions/predictions.json", "r") as f:
-    predictions = json.load(f)
+def send_data_to_API(json_name):
 
-# Data to send (test)
-predictions = { # False prediction, for testing only
-    "action": "updatePredictedTime",
-    "predictionArray": predictions,
-    "restaurant": "ri lunch",
-    "date":"2025-01-15T12:00:00",
-    "token" : ACCESS_TOKEN,
-}
+    # Charger les prédictions depuis le fichier
+    file_name = "Fichiers_JSON_predictions/"+json_name
+    with open(file_name, "r") as f:
+        info = json.load(f)
 
-# Filling the headers
-headers = {
-    "Content-Type": "application/json",
-}
+    # Data to send
+    predictions = { # False prediction, for testing only
+        "action": "updatePredictedTime",
+        "predictionArray": info["prediction"],
+        "restaurant": info["restaurant"],
+        "date":info["date"],
+        "token" : ACCESS_TOKEN,
+    }
 
-# POST request
-try:
-    response = requests.post(API_URL, headers=headers, data=json.dumps(predictions))
-    
-    # Verify answer
-    if response.json()["status"] == "error":
-        print(f"Échec de l'envoi : {response.status_code}")
-        print("Détails :", response.text)
-    elif response.status_code == 200:
-        print("Prédictions envoyées avec succès !")
-        print("Réponse de l'API :", response.json())
-    else:
-        print(f"Échec de l'envoi : {response.status_code}")
-        print("Détails :", response.text)
-except requests.exceptions.RequestException as e:
-    print("Erreur lors de la communication avec l'API :", e)
+    # Filling the headers
+    headers = {
+        "Content-Type": "application/json",
+    }
+
+    # POST request
+    try:
+        response = requests.post(API_URL, headers=headers, data=json.dumps(predictions))
+        
+        # Verify answer
+        if response.json()["status"] == "error":
+            print(f"Échec de l'envoi : {response.status_code}")
+            print("Détails :", response.text)
+        elif response.status_code == 200:
+            print("Prédictions envoyées avec succès !")
+            print("Réponse de l'API :", response.json())
+        else:
+            print(f"Échec de l'envoi : {response.status_code}")
+            print("Détails :", response.text)
+    except requests.exceptions.RequestException as e:
+        print("Erreur lors de la communication avec l'API :", e)

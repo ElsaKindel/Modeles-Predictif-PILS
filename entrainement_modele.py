@@ -3,6 +3,7 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
+from keras.losses import MeanSquaredError
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
@@ -91,9 +92,6 @@ def generate_historical_data(freq, num_days=30):
         current_data_df = pd.DataFrame(current_data, columns=["day", "time","wait_time"])
         #data.append(current_data)#data.append([current_day, time, wait_time])
         data = pd.concat([data, current_data_df], ignore_index=True)
-
-    # Créer un DataFrame à partir des données
-    #df = pd.DataFrame.from_dict(data)
     
     return data
 
@@ -139,7 +137,7 @@ model = Sequential([
     Dense(y_train.shape[1])
 ])
 
-model.compile(optimizer='adam', loss='mse')
+model.compile(optimizer='adam', loss=MeanSquaredError())
 model.summary()
 
 # Entraîner le modèle
@@ -159,8 +157,8 @@ if graphe==True:
 
 # Prédiction pour un seul jour
 X_test_one_day = X[22] #jour random pris dans l'historique généré
-# X[22] est de forme 7*24 puisqu'il contient les données des 7 jours précédents (lookback = 7) 
-# et qu'il y a 24 échantillons pour chaque service
+# X[22] est de forme 4*12 puisqu'il contient les données des 4 semaines précédentes (lookback = 4) 
+# et qu'il y a 12 échantillons pour chaque service. Il est de type ndarray
 X_test_one_day = np.expand_dims(X_test_one_day, axis=0) #ajoute la batch size, obligatoire en LSTM
 y_pred = model.predict(X_test_one_day)
 y_pred_rescaled = scaler.inverse_transform(y_pred)  # Revenir aux valeurs originales
@@ -177,5 +175,10 @@ print("Fichier predictions.json créé.")
 # Évaluer les performances
 mae = np.mean(np.abs(scaler.inverse_transform(y_test) - y_pred_rescaled))
 print(f"Mean Absolute Error: {mae:.2f}")
+
+# Enregistrer le modèle
+model.save("modele_lstm_attente.keras")
+print("Modèle LSTM sauvegardé sous 'modele_lstm_attente.h5'")
+
 
 
